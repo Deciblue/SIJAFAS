@@ -2,35 +2,30 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Role;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
+     * Mass assignable fields
      */
     protected $fillable = [
         'name',
         'email',
         'password',
         'role_id',
+        'firebase_uid',
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
+     * Hidden fields for API response
      */
     protected $hidden = [
         'password',
@@ -38,20 +33,43 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
+     * Attribute casting
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
 
     /**
-     * Get the role of the user.
+     * Relation: User belongs to Role
      */
-    public function role(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
     }
+
+    /**
+     * Helper: check role quickly (FOR MIDDLEWARE / API)
+     */
+    public function hasRole(string $role): bool
+    {
+        return $this->role && $this->role->name === $role;
+    }
+
+    public function assignedWorkOrders()
+    {
+    return $this->hasMany(
+        WorkOrder::class,
+        'technician_id'
+    );
+    }
+
+    public function workOrders()
+    {
+
+    return $this->hasMany(
+        WorkOrder::class,
+        'technician_id'
+    );
+    }
+    
 }
